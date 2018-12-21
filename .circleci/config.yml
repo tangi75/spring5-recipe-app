@@ -22,11 +22,31 @@ jobs: # a collection of steps
         - ~/.m2
         key: circleci-spring5-recipe-app-{{ checksum "pom.xml" }}
 
-    - run: mvn package # run the actual tests
+    - run: mvn package verify # run the actual tests
 
-    - store_test_results: # uploads the test metadata from the `target/surefire-reports` directory so that it can show up in the CircleCI dashboard.
-        # Upload test results for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
-        path: target/surefire-reports
+    # uploads the test metadata from the `target/surefire-reports` directory so that it can show up in the CircleCI dashboard.
+    # Upload test results for display in Test Summary: https://circleci.com/docs/2.0/collect-test-data/
+    - run:
+        name: Save unit test results
+        command: |
+          mkdir -p ~/junit/
+          find . -type f -regex ".*/target/surefire-reports/.*xml" -exec cp {} ~/junit/ \;
+        when: always
+    - store_test_results:
+        path: ~/junit
+    - store_artifacts:
+        path: ~/junit
+
+    - run:
+        name: Save integration test results
+        command: |
+          mkdir -p ~/failsafe/
+          find . -type f -regex ".*/target/failsafe-reports/.*xml" -exec cp {} ~/failsafe/ \;
+        when: always
+    - store_test_results:
+        path: ~/failsafe
+    - store_artifacts:
+        path: ~/failsafe
 
     - store_artifacts: # store the uberjar as an artifact
         # Upload test summary for display in Artifacts: https://circleci.com/docs/2.0/artifacts/
